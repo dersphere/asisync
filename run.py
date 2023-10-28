@@ -5,8 +5,11 @@ import datetime
 from pathlib import Path
 import re
 from shutil import copy, copy2, copystat
+import time
 
 from simple_term_menu import TerminalMenu
+
+SLEEP_SECSONDS = 5
 
 EXCLUDED_FOLDERS = [
     ".DS_Store",
@@ -122,15 +125,20 @@ def copy_file_if_not_exists(source_file: Path, target_file: Path) -> bool:
 
 def main():
     source_folder = get_source_path()
-    print(f"Using source {source_folder}!")
     target_folder = get_target_path(source_folder)
+    print(f"Using source {source_folder}!")
     print(f"Using target {target_folder}!")
     while True:
-        source_files = get_source_files(source_folder)
-        for source_file in source_files:
-            target_file = target_folder.joinpath(source_file.name)
-            copy_file_if_not_exists(source_file, target_file)
-
+        try: 
+            source_files = get_source_files(source_folder)
+            for source_file in source_files:
+                target_file = target_folder.joinpath(source_file.name)
+                copy_file_if_not_exists(source_file, target_file)
+            print("All files copied. Waiting for new files ...")
+            time.sleep(SLEEP_SECSONDS)
+        except KeyboardInterrupt:
+            print("Stopping, you can continue anytime!")
+            break
 
 if __name__ == "__main__":
     main()
