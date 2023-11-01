@@ -106,20 +106,20 @@ def get_source_files(source_path: Path) -> list[Path]:
     )
 
 
-def copy_file_if_not_exists(source_file: Path, target_file: Path) -> bool:
+def copy_file(source_file: Path, target_file: Path) -> bool:
     if (
         target_file.is_file()
         and source_file.stat().st_size == target_file.stat().st_size
     ):
-        # print(f"Skipping {source_file.name}")
         return False
-    print(f"Copying {source_file.name} ...")
+    print(f"Copying {source_file.name} ...", end="", flush=True)
     copy(source_file, target_file)
     try:
         copystat(source_file, target_file)
     except PermissionError:
         # some or all permissions could not be copied. Sometimes times work and just permissions fail
         pass
+    print(" done!")
     return True
 
 
@@ -133,8 +133,10 @@ def main():
             source_files = get_source_files(source_folder)
             for source_file in source_files:
                 target_file = target_folder.joinpath(source_file.name)
-                copy_file_if_not_exists(source_file, target_file)
-            print("All files copied. Waiting for new files ...")
+                copy_file(source_file, target_file)
+            print("All files copied!")
+            print("You can stop anytime by pressing CTRL+C")
+            print("Waiting for new files ...")
             time.sleep(SLEEP_SECSONDS)
         except KeyboardInterrupt:
             print("Stopping, you can continue anytime!")
