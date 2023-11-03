@@ -22,6 +22,7 @@ POTENTIAL_SOURCES = [
 
 TARGET_PARENT = "/Volumes/PortableSSD/Astrophotography"
 INCLUDE_PATTERN = re.compile(r"^(.+)\.((fit)|(fits))$")
+TARGET_SUBFOLDER = 'lights'
 
 
 def _time_str(path: Path) -> str:
@@ -113,6 +114,8 @@ def copy_file(source_file: Path, target_file: Path) -> bool:
     ):
         return False
     print(f"Copying {source_file.name} ...", end="", flush=True)
+    if not target_file.parent.is_dir():
+        target_file.parent.mkdir(parents=True)
     copy(source_file, target_file)
     try:
         copystat(source_file, target_file)
@@ -132,14 +135,14 @@ def main():
         try: 
             source_files = get_source_files(source_folder)
             for source_file in source_files:
-                target_file = target_folder.joinpath(source_file.name)
+                target_file = target_folder.joinpath(TARGET_SUBFOLDER).joinpath(source_file.name)
                 copy_file(source_file, target_file)
             print("All files copied!")
             print("You can stop anytime by pressing CTRL+C")
             print("Waiting for new files ...")
             time.sleep(SLEEP_SECSONDS)
         except KeyboardInterrupt:
-            print("Stopping, you can continue anytime!")
+
             break
 
 if __name__ == "__main__":
