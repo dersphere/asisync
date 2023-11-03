@@ -54,23 +54,24 @@ def get_target_path(source_path: Path) -> Path:
 
     folders = []
 
+    # add suggested path as the first entry - could already exist or not
+    suggested_path = parent_path.joinpath(
+        f"{_time_str(source_path)} - {source_path.name}"
+    )
+    folders.append(
+        {
+            "name": f"(NEW) {suggested_path.name}" if not suggested_path.is_dir() else suggested_path.name,
+            "path": suggested_path,
+        }
+    )
+
+    # add interactive input as the second entry
     folders.append(
         {
             "name": "Input folder name",
             "path": None,
         }
     )
-
-    suggested_path = parent_path.joinpath(
-        f"{_time_str(source_path)} - {source_path.name}"
-    )
-    if not suggested_path.is_dir():
-        folders.append(
-            {
-                "name": f"(NEW) {suggested_path.name}",
-                "path": suggested_path,
-            }
-        )
 
     folders.extend(
         [
@@ -81,7 +82,7 @@ def get_target_path(source_path: Path) -> Path:
             for path in sorted(
                 parent_path.iterdir(), key=lambda x: x.stat().st_ctime, reverse=True
             )
-            if not path.name in EXCLUDED_FOLDERS
+            if not path.name in EXCLUDED_FOLDERS and not path.name == suggested_path.name
         ]
     )
 
