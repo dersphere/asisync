@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
 import datetime
-from pathlib import Path
 import re
-from shutil import copy, copystat
+import sys
 import time
+from pathlib import Path
+from shutil import copy, copystat
 
 from simple_term_menu import TerminalMenu
 
