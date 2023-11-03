@@ -23,7 +23,7 @@ POTENTIAL_SOURCES = [
 
 TARGET_PARENT = "/Volumes/PortableSSD/Astrophotography"
 INCLUDE_PATTERN = re.compile(r"^(.+)\.((fit)|(fits))$")
-TARGET_SUBFOLDER = 'lights'
+TARGET_SUBFOLDER = "lights"
 
 
 def _time_str(path: Path) -> str:
@@ -60,7 +60,9 @@ def get_target_path(source_path: Path) -> Path:
     )
     folders.append(
         {
-            "name": f"(NEW) {suggested_path.name}" if not suggested_path.is_dir() else suggested_path.name,
+            "name": f"(NEW) {suggested_path.name}"
+            if not suggested_path.is_dir()
+            else suggested_path.name,
             "path": suggested_path,
         }
     )
@@ -82,7 +84,8 @@ def get_target_path(source_path: Path) -> Path:
             for path in sorted(
                 parent_path.iterdir(), key=lambda x: x.stat().st_ctime, reverse=True
             )
-            if not path.name in EXCLUDED_FOLDERS and not path.name == suggested_path.name
+            if not path.name in EXCLUDED_FOLDERS
+            and not path.name == suggested_path.name
         ]
     )
 
@@ -134,18 +137,20 @@ def main():
     print(f"Using source {source_folder}!")
     print(f"Using target {target_folder}!")
     while True:
-        try: 
+        try:
             source_files = get_source_files(source_folder)
             for source_file in source_files:
-                target_file = target_folder.joinpath(TARGET_SUBFOLDER).joinpath(source_file.name)
+                target_file = target_folder.joinpath(TARGET_SUBFOLDER).joinpath(
+                    source_file.name
+                )
                 copy_file(source_file, target_file)
             print("All files copied!")
             print("You can stop anytime by pressing CTRL+C")
             print("Waiting for new files ...")
             time.sleep(SLEEP_SECSONDS)
         except KeyboardInterrupt:
-
             break
+
 
 if __name__ == "__main__":
     main()
