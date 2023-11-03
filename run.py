@@ -24,6 +24,7 @@ POTENTIAL_SOURCES = [
 TARGET_PARENT = "/Volumes/PortableSSD/Astrophotography"
 INCLUDE_PATTERN = re.compile(r"^(.+)\.((fit)|(fits))$")
 TARGET_SUBFOLDER = "lights"
+TARGET_SUBFOLDER_ALTERNATIVE = "lights/trash"
 
 
 def _time_str(path: Path) -> str:
@@ -112,11 +113,19 @@ def get_source_files(source_path: Path) -> list[Path]:
     )
 
 
-def copy_file(source_file: Path, target_file: Path) -> bool:
+def copy_file(source_file: Path, target_path: Path) -> bool:
+    target_file = target_path.joinpath(TARGET_SUBFOLDER).joinpath(source_file.name)
+    alternative_target_file = target_path.joinpath(
+        TARGET_SUBFOLDER_ALTERNATIVE
+    ).joinpath(source_file.name)
     if (
-        target_file.is_file()
-        and source_file.stat().st_size == target_file.stat().st_size
-    ) or source_file.stat().st_ctime > time.time() - FILE_CTIME_TOLERANCE_SECONDS:
+        (
+            target_file.is_file()
+            and source_file.stat().st_size == target_file.stat().st_size
+        )
+        or alternative_target_file.is_file()
+        or source_file.stat().st_ctime > time.time() - FILE_CTIME_TOLERANCE_SECONDS
+    ):
         return False
     print(f"Copying {source_file.name} ...", end="", flush=True)
     if not target_file.parent.is_dir():
@@ -140,10 +149,7 @@ def main():
         try:
             source_files = get_source_files(source_folder)
             for source_file in source_files:
-                target_file = target_folder.joinpath(TARGET_SUBFOLDER).joinpath(
-                    source_file.name
-                )
-                copy_file(source_file, target_file)
+                copy_file(source_file, target_folder)
             print("All files copied!")
             print("You can stop anytime by pressing CTRL+C")
             print("Waiting for new files ...")
