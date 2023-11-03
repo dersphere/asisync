@@ -5,11 +5,11 @@ import re
 import sys
 import time
 from pathlib import Path
-from shutil import copy, copystat
+from shutil import copystat
 
 from simple_term_menu import TerminalMenu
 
-SLEEP_SECSONDS = 5
+SLEEP_SECSONDS = 20
 FILE_CTIME_MIN_SECONDS = 10
 
 
@@ -33,6 +33,34 @@ def _date_str(path: Path) -> str:
     return (
         datetime.fromtimestamp(path.stat().st_ctime) - timedelta(hours=12)
     ).strftime("%Y-%m-%d")
+
+
+def _copy_file_with_progress(
+    source_file: Path, destination_file: Path, chunk_size=1024
+):
+    total_size = source_file.stat().st_size
+    with open(source_file, "rb") as src_file, open(destination_file, "wb") as dest_file:
+        copied_size = 0
+        while True:
+            data = src_file.read(chunk_size)
+            if not data:
+                break
+            dest_file.write(data)
+            copied_size += len(data)
+            progress = int(
+                (copied_size / total_size) * 50
+            )  # 50 characters in the progress bar
+            print(
+                f"Copying {source_file.name} ... [{'#' * progress}{' ' * (50 - progress)}] {100 * copied_size // total_size}%\r",
+                end="",
+                flush=True,
+            )
+    try:
+        copystat(source_file, destination_file)
+    except PermissionError:
+        # some or all permissions could not be copied. Sometimes times work and just permissions fail
+        pass
+    print(" Done!")
 
 
 def get_source_path() -> Path:
@@ -117,7 +145,7 @@ def get_source_files(source_path: Path) -> list[Path]:
     )
 
 
-def copy_file(source_file: Path, target_path: Path) -> bool:
+def handle_file(source_file: Path, target_path: Path) -> bool:
     target_file = target_path.joinpath(TARGET_SUBFOLDER).joinpath(source_file.name)
     alternative_target_file = target_path.joinpath(
         TARGET_SUBFOLDER_ALTERNATIVE
@@ -131,16 +159,9 @@ def copy_file(source_file: Path, target_path: Path) -> bool:
         or source_file.stat().st_ctime > time.time() - FILE_CTIME_MIN_SECONDS
     ):
         return False
-    print(f"Copying {source_file.name} ...", end="", flush=True)
     if not target_file.parent.is_dir():
         target_file.parent.mkdir(parents=True)
-    copy(source_file, target_file)
-    try:
-        copystat(source_file, target_file)
-    except PermissionError:
-        # some or all permissions could not be copied. Sometimes times work and just permissions fail
-        pass
-    print(" done!")
+    _copy_file_with_progress(source_file, target_file)
     return True
 
 
@@ -153,10 +174,8 @@ def main():
         try:
             source_files = get_source_files(source_folder)
             for source_file in source_files:
-                copy_file(source_file, target_folder)
-            print("All files copied!")
-            print("You can stop anytime by pressing CTRL+C")
-            print("Waiting for new files ...")
+                handle_file(source_file, target_folder)
+            print("Waiting for new files ... (Ctrl+C to exit)")
             time.sleep(SLEEP_SECSONDS)
         except KeyboardInterrupt:
             break
