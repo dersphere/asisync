@@ -10,6 +10,7 @@ import time
 from simple_term_menu import TerminalMenu
 
 SLEEP_SECSONDS = 5
+FILE_CTIME_TOLERANCE_SECONDS = 10
 
 EXCLUDED_FOLDERS = [
     ".DS_Store",
@@ -111,7 +112,7 @@ def copy_file(source_file: Path, target_file: Path) -> bool:
     if (
         target_file.is_file()
         and source_file.stat().st_size == target_file.stat().st_size
-    ):
+    ) or source_file.stat().st_ctime > time.time() - FILE_CTIME_TOLERANCE_SECONDS:
         return False
     print(f"Copying {source_file.name} ...", end="", flush=True)
     if not target_file.parent.is_dir():
