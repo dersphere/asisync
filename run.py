@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import datetime
+from datetime import datetime, timedelta
 import re
 import sys
 import time
@@ -29,7 +29,10 @@ FILE_INCLUDE_PATTERN = re.compile(r"^(.+)\.((fit)|(fits))$")
 
 
 def _date_str(path: Path) -> str:
-    return datetime.datetime.fromtimestamp(path.stat().st_ctime).strftime("%Y-%m-%d")
+    # remove 12h to get the date of the night
+    return (
+        datetime.fromtimestamp(path.stat().st_ctime) - timedelta(hours=12)
+    ).strftime("%Y-%m-%d")
 
 
 def get_source_path() -> Path:
