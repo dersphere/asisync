@@ -4,36 +4,37 @@ import sys
 import datetime
 from pathlib import Path
 import re
-from shutil import copy, copy2, copystat
+from shutil import copy, copystat
 import time
 
 from simple_term_menu import TerminalMenu
 
 SLEEP_SECSONDS = 5
-FILE_CTIME_TOLERANCE_SECONDS = 10
+FILE_CTIME_MIN_SECONDS = 10
+
+
+SOURCE_FOLDERS = [
+    "/Volumes/TF Images/ASIAIR/Autorun/Light",
+    "/Volumes/TF Images/ASIAIR/Plan/Light",
+]
+TARGET_PARENT_FOLDER = "/Volumes/PortableSSD/Astrophotography"
+
+TARGET_SUBFOLDER = "lights"
+TARGET_SUBFOLDER_ALTERNATIVE = "lights/trash"
 
 EXCLUDED_FOLDERS = [
     ".DS_Store",
 ]
-
-POTENTIAL_SOURCES = [
-    "/Volumes/TF Images/ASIAIR/Autorun/Light",
-    "/Volumes/TF Images/ASIAIR/Plan/Light",
-]
-
-TARGET_PARENT = "/Volumes/PortableSSD/Astrophotography"
-INCLUDE_PATTERN = re.compile(r"^(.+)\.((fit)|(fits))$")
-TARGET_SUBFOLDER = "lights"
-TARGET_SUBFOLDER_ALTERNATIVE = "lights/trash"
+FILE_INCLUDE_PATTERN = re.compile(r"^(.+)\.((fit)|(fits))$")
 
 
-def _time_str(path: Path) -> str:
+def _date_str(path: Path) -> str:
     return datetime.datetime.fromtimestamp(path.stat().st_ctime).strftime("%Y-%m-%d")
 
 
 def get_source_path() -> Path:
     paths = []
-    for source_path in map(Path, POTENTIAL_SOURCES):
+    for source_path in map(Path, SOURCE_FOLDERS):
         if source_path.is_dir():
             for path in source_path.iterdir():
                 if path.name not in EXCLUDED_FOLDERS:
@@ -42,22 +43,22 @@ def get_source_path() -> Path:
         print("No folders found!")
         sys.exit(1)
     paths.sort(key=lambda x: x.stat().st_ctime, reverse=True)
-    idx = TerminalMenu([f"{_time_str(path)} - {path}" for path in paths]).show()
+    idx = TerminalMenu([f"{_date_str(path)} - {path}" for path in paths]).show()
     selected_path = paths[idx]
     return selected_path
 
 
 def get_target_path(source_path: Path) -> Path:
-    parent_path = Path(TARGET_PARENT)
+    parent_path = Path(TARGET_PARENT_FOLDER)
     if not parent_path.is_dir():
-        print(f"Target folder {TARGET_PARENT} does not exist!")
+        print(f"Target folder {TARGET_PARENT_FOLDER} does not exist!")
         sys.exit(1)
 
     folders = []
 
     # add suggested path as the first entry - could already exist or not
     suggested_path = parent_path.joinpath(
-        f"{_time_str(source_path)} - {source_path.name}"
+        f"{_date_str(source_path)} - {source_path.name}"
     )
     folders.append(
         {
@@ -107,7 +108,7 @@ def get_source_files(source_path: Path) -> list[Path]:
         [
             path
             for path in source_path.iterdir()
-            if path.is_file() and INCLUDE_PATTERN.match(path.name)
+            if path.is_file() and FILE_INCLUDE_PATTERN.match(path.name)
         ],
         key=lambda x: x.stat().st_ctime,
     )
@@ -124,7 +125,7 @@ def copy_file(source_file: Path, target_path: Path) -> bool:
             and source_file.stat().st_size == target_file.stat().st_size
         )
         or alternative_target_file.is_file()
-        or source_file.stat().st_ctime > time.time() - FILE_CTIME_TOLERANCE_SECONDS
+        or source_file.stat().st_ctime > time.time() - FILE_CTIME_MIN_SECONDS
     ):
         return False
     print(f"Copying {source_file.name} ...", end="", flush=True)
