@@ -9,7 +9,7 @@ from shutil import copystat
 
 from simple_term_menu import TerminalMenu
 
-SLEEP_SECSONDS = 20
+SLEEP_SECSONDS = 30
 FILE_CTIME_MIN_SECONDS = 10
 
 
@@ -36,8 +36,8 @@ def _date_str(path: Path) -> str:
 
 
 def _copy_file_with_progress(
-    source_file: Path, destination_file: Path, chunk_size=1024
-):
+    source_file: Path, destination_file: Path, chunk_size=1024 * 64
+) -> None:
     total_size = source_file.stat().st_size
     with open(source_file, "rb") as src_file, open(destination_file, "wb") as dest_file:
         copied_size = 0
@@ -60,7 +60,7 @@ def _copy_file_with_progress(
     except PermissionError:
         # some or all permissions could not be copied. Sometimes times work and just permissions fail
         pass
-    print(" Done!")
+    print("")
 
 
 def get_source_path() -> Path:
@@ -172,8 +172,7 @@ def main():
     print(f"Using target {target_folder}!")
     while True:
         try:
-            source_files = get_source_files(source_folder)
-            for source_file in source_files:
+            for source_file in get_source_files(source_folder):
                 handle_file(source_file, target_folder)
             print("Waiting for new files ... (Ctrl+C to exit)")
             time.sleep(SLEEP_SECSONDS)
